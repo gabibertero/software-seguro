@@ -1,0 +1,7 @@
+# Manejo Inseguro de Errores (Stack Traces)
+
+Un mensaje de error genérico informa que ocurrió un problema sin mostrar detalles internos. Por ejemplo, puede indicar que la solicitud no pudo procesarse y ofrecer un identificador para que soporte la investigue. En cambio, un stack trace muestra la secuencia de llamadas que llevó al error y puede incluir el tipo de excepción, nombres de clases y métodos, rutas de archivos y números de línea.
+
+Exponer esa traza en producción le da a un atacante información para reconocer cómo está construida la aplicación. Puede revelar el lenguaje, el framework, bibliotecas o versiones, la estructura interna del código y el punto donde falló una operación. Con esos datos, el atacante puede reducir las posibilidades que debe probar, buscar fallas conocidas en las tecnologías identificadas y preparar entradas más precisas para provocar o aprovechar errores. La traza por sí sola no demuestra que exista una vulnerabilidad explotable, pero facilita la etapa de reconocimiento y puede acelerar la búsqueda de una.
+
+Para prevenir esta exposición, la aplicación debe devolver una respuesta breve y controlada al usuario y guardar el detalle técnico en registros internos con acceso restringido. Se recomienda manejar las excepciones de forma centralizada, desactivar el modo de depuración en producción y usar un identificador de incidente para relacionar la respuesta con el registro interno. Los registros también deben evitar incluir contraseñas, tokens u otros datos sensibles.
