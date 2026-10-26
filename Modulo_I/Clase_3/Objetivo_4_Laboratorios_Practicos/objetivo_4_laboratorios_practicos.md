@@ -9,7 +9,12 @@
 
 ## El mejor secreto
 
-Pendiente de realizar y documentar.
+1. Abrí el laboratorio y era un video de un jefe de estado tecleando la clave del `secreto.zip` en un teclado numérico trucho, donde cada tecla era un dígito distinto que no sabía cuál era. Había que descifrar el zip.
+2. Miré el zip con `zipinfo` y vi que estaba cifrado con AES y no con el ZipCrypto viejo, así que `fcrackzip` no me servía y lo tenía que romper offline con john/hashcat.
+3. En vez de mirar el video me puse a escuchar el audio, porque cada tecla sonaba distinto. Saqué que eran 12 toques con 5 teclas diferentes.
+4. Con eso armé una lista con todas las combinaciones posibles de esos números (`numeros_12digitos_v4.txt`) para usarla como diccionario.
+5. Le pasé la lista al zip con john (`zip2john secreto.zip > hash.txt` y `john --wordlist=numeros_12digitos_v4.txt hash.txt`) y me tiró la clave: `547795999937`.
+6. Abrí el `secreto.txt` con esa clave y mandé al juez el código `696026dd5bf583f34530a657d896ebea`.
 
 ## Votación
 
@@ -21,4 +26,8 @@ Pendiente de realizar y documentar.
 
 ## Votación nueva versión
 
-Pendiente de realizar y documentar.
+1. Abrí el laboratorio y vi que, a diferencia de la versión anterior, al votar se setea una cookie `voto` y el servidor rechaza los reenvíos.
+2. Probé borrar la cookie `voto` y cambiar `PHPSESSID`, pero el servidor volvía a setear el mismo token `voto`, así que el control de duplicados no estaba en las cookies.
+3. En Repeater fui cambiando un campo por vez y mirando el `Set-Cookie: voto=` de la respuesta. El `User-Agent` no alteraba el token, pero al agregar el header `X-Forwarded-For` con una IP el token `voto` cambió: la aplicación identifica al votante por la IP que toma de ese header, que es controlable por el cliente.
+4. Envié la petición a Intruder (modo Sniper), marqué la IP del `X-Forwarded-For` como posición de payload y usé payload tipo Numbers para iterar muchas IPs distintas, sumando un voto por cada una.
+5. Repetí hasta cumplir la condición del laboratorio y envié al juez el código `143885b3abc1012375b3846f84c39203`.
