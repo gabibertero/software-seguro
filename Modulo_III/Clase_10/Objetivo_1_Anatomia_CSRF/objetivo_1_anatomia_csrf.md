@@ -1,28 +1,24 @@
-# Anatomía de un ataque CSRF
+# Cómo funciona un CSRF
 
-Un **Cross-Site Request Forgery (CSRF)** sucede cuando una página controlada por un atacante consigue que el navegador de una persona autenticada envíe una petición no deseada a otra aplicación. La página maliciosa no necesita conocer la contraseña ni leer la respuesta: aprovecha que el navegador puede adjuntar las cookies de sesión al solicitar el sitio de destino. Si el servidor interpreta la cookie como autorización suficiente para cambiar datos, ejecuta la acción como si la hubiera pedido la víctima.
+Un CSRF ocurre cuando una página ajena consigue que el navegador de alguien que ya inició sesión mande una petición al sitio legítimo. El atacante no necesita saber la contraseña ni leer la cookie: el navegador puede adjuntarla automáticamente al pedir una URL de ese sitio.
 
-## Flujo de un ataque
+Por ejemplo, para cambiar el correo de una cuenta:
 
-1. La víctima inicia sesión en `cuenta.ejemplo` y recibe una cookie de sesión.
-2. Sin cerrar la sesión, visita `atacante.ejemplo`. Esa página induce una petición hacia una operación de `cuenta.ejemplo`, por ejemplo, un formulario de cambio de correo. El atacante elige los parámetros de la operación.
-3. Si la política de cookies permite enviarlas en esa petición entre sitios, el navegador adjunta automáticamente la cookie correspondiente a `cuenta.ejemplo`. La página atacante no necesita leer su valor.
-4. El servidor reconoce la sesión, pero, si no comprueba la intención del usuario mediante una defensa CSRF, acepta los parámetros elegidos por el atacante y cambia el correo.
+1. La persona entra a `cuenta.ejemplo` y queda autenticada con una cookie de sesión.
+2. Después visita `atacante.ejemplo`. Esa página prepara un formulario que apunta al cambio de correo de `cuenta.ejemplo`, con una dirección elegida por el atacante.
+3. Si las reglas de la cookie permiten enviarla en esa petición entre sitios, el navegador la adjunta aunque la petición haya salido de la página atacante.
+4. El servidor ve una sesión válida. Si procesa el cambio sin comprobar que la persona lo pidió, modifica el correo.
 
-El punto de fallo está en confundir **una petición autenticada** con **una petición autorizada por el usuario**. La política de mismo origen puede impedir que la página atacante lea la respuesta, pero eso no impide necesariamente que provoque el envío de un formulario. Por eso usar `POST` o HTTPS por sí solos no resuelve el problema.
+La falla está en dar por hecho que **tener la cookie implica querer hacer esa acción**. La política de mismo origen normalmente impide que la página atacante lea la respuesta, pero no siempre impide enviar un formulario. Usar HTTPS o hacer el cambio con `POST` no verifica por sí solo la intención del usuario.
 
-## Qué cambia con SameSite
+La bandera `SameSite` limita cuándo viaja la cookie:
 
-El atributo `SameSite` de la cookie le indica al navegador cuándo adjuntarla a peticiones originadas desde otro *sitio*:
+- **`Strict`**: no la envía en peticiones iniciadas desde otro sitio, ni siquiera en la navegación inicial desde un enlace externo. Protege más, pero puede interferir con algunos flujos normales.
+- **`Lax`**: la envía en el mismo sitio y en una navegación principal entre sitios con un método seguro, como `GET`. Un formulario `POST` entre sitios normalmente queda sin esa cookie, pero una acción que cambia datos mediante `GET` todavía puede ser atacable.
 
-| Valor | Comportamiento relevante para CSRF |
-|---|---|
-| `SameSite=Strict` | No envía la cookie en peticiones iniciadas desde otro sitio, incluso durante la navegación inicial hacia la aplicación. Es la opción más restrictiva, aunque puede afectar flujos legítimos desde enlaces externos. |
-| `SameSite=Lax` | La envía en peticiones del mismo sitio y en navegaciones principales hacia el sitio de destino que usan un método seguro, como `GET`. No la envía en un `POST` entre sitios normal ni en recursos embebidos como imágenes. |
+Además, `SameSite` distingue sitios, no todos los orígenes o subdominios. Cuando no se declara el atributo, algunos navegadores aplican un valor por defecto con excepciones; conviene configurarlo explícitamente.
 
-`Lax` frena muchos CSRF basados en formularios `POST`, pero una operación que cambia estado mediante `GET` todavía puede ser vulnerable: una navegación principal `GET` sí puede llevar la cookie. Además, el comportamiento por defecto cuando falta el atributo puede ser más permisivo que declarar `Lax` explícitamente en algunos navegadores. `SameSite` trabaja por *sitio*, no equivale a una separación estricta entre todos los subdominios.
-
-La defensa completa consiste en no modificar estado con métodos seguros como `GET`, usar la protección CSRF del framework o tokens impredecibles vinculados a la sesión y **validarlos en el servidor** para cada petición que cambie estado. `SameSite=Lax` o `Strict` agrega una capa de defensa según lo permita el flujo de la aplicación; no reemplaza la validación del token.
+Para proteger una acción que modifica datos, usaría la defensa CSRF del framework o un token impredecible asociado a la sesión, validado en el servidor. También evitaría modificar datos con `GET`. `SameSite=Lax` o `Strict` suma una capa, pero no reemplaza esa validación.
 
 ## Fuentes
 
