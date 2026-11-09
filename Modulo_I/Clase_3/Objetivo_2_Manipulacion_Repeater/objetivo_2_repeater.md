@@ -1,20 +1,21 @@
-# Manipulación Manual de Peticiones con Repeater
+# Manipulación de una petición con Repeater
 
 ## Laboratorio: Turnero
 
-1. En el laboratorio, capturo una petición `DELETE` generada al cancelar una cita:
+1. Cancelé una cita en el lab y capturé la petición que generó el navegador:
 
    - **Método:** `DELETE`
    - **Endpoint original:** `/api/appointments/2`
    - **Host:** `chl-a5eec477-10cd-4da7-b0de-5edaceff6a67-turnero.softwareseguro.com.ar`
 
-2. Desde **Proxy → HTTP history**, envío la petición a **Repeater**.
-3. En Repeater modifico manualmente el ID de la ruta, de `/api/appointments/2` a `/api/appointments/4`, y pulso **Send**.
-4. El servidor responde `HTTP/2 200 OK` con contenido JSON (`Content-Length: 44`). En la interfaz del laboratorio comprobé que la cita con ID 4 se eliminó.
-5. La prueba muestra que el ID incluido en la ruta determina qué cita afecta la petición `DELETE`.
+2. Desde **Proxy → HTTP history** la mandé a **Repeater**.
+3. Cambié el ID de la ruta de `/api/appointments/2` a `/api/appointments/4` y apreté **Send**.
+4. El servidor respondió `HTTP/2 200 OK` con un JSON (`Content-Length: 44`). Después comprobé en el lab que la cita con ID 4 se había eliminado.
 
-## Captura de pantalla
+La prueba me mostró que el ID de la ruta define sobre qué cita actúa el `DELETE`. Cambiarlo desde Repeater alcanzó para afectar otra cita.
 
-La imagen muestra la petición modificada y la respuesta recibida en Repeater. Se ocultó la cabecera `Cookie` en la captura.
+## Captura
+
+En la imagen se ve la petición modificada y la respuesta. Tapé la cabecera `Cookie` para no dejar el valor de sesión en el informe.
 
 ![Petición DELETE modificada en Repeater y respuesta HTTP 200](captura_repeater_redactada.png)
