@@ -1,19 +1,23 @@
-# Automatización vs Explotación Manual (sqlmap)
+# Automatización vs. explotación manual (sqlmap)
 
-sqlmap es la mejor herramienta para explotar inyecciones SQL y automatiza todo el trabajo pesado, pero no entiende la aplicación: manda peticiones sueltas y prueba payloads contra un parámetro. Por eso hay situaciones donde se come la vulnerabilidad de largo y un atacante a mano, manipulando la petición en Burp, sí la explota. Van dos casos concretos.
+sqlmap automatiza la detección y explotación de SQLi, pero para usarlo bien primero hay que entender cómo llega la aplicación al parámetro vulnerable y cómo se reconoce una respuesta exitosa. No alcanza con decir que falla porque hay un token, un JSON, un WAF o una inyección de segundo orden: la herramienta tiene opciones para manejar muchos de esos casos (`-r`, `--csrf-token`, `--eval`, `--base64`, `--tamper`, `--second-url` y `--second-req`, entre otras). Los siguientes son dos escenarios en los que una prueba automática **sin adaptación al flujo concreto** puede fallar y una investigación manual con Burp Suite puede encontrar la SQLi.
 
-## 1. Cuando la inyección depende de una secuencia o de la lógica de negocio
+## 1. Secuencia de varios pasos con valores dependientes del estado
 
-Hay vulnerabilidades que solo son alcanzables después de una serie de pasos: un carrito de varios pasos, un token que te dan en una petición anterior y tenés que mandar en la siguiente, un valor que hay que calcular, o un parámetro que recién aparece cuando el flujo está en cierto estado. sqlmap dispara sus peticiones de forma aislada y no sabe reproducir ese camino: le pega al endpoint sin el contexto previo y la app lo rebota antes de llegar al punto inyectable.
+Supongamos un carrito en el que primero se crea una orden, luego se obtiene un token de un solo uso y finalmente se envía un parámetro junto con una firma calculada sobre el contenido de la orden. Si repito solo la última petición cambiando ese parámetro, el servidor rechaza la firma o el token antes de construir la consulta vulnerable. sqlmap recibe respuestas de rechazo y puede concluir que no hay inyección, aunque el parámetro sí llegue a SQL dentro de un flujo válido.
 
-A mano es otra cosa: en Burp sigo el flujo completo, veo de dónde sale cada token, lo arrastro fresco a la petición siguiente y meto el payload justo en el paso que corresponde. Como entiendo la secuencia, llego al parámetro vulnerable que sqlmap nunca alcanza.
+Con Burp puedo recorrer los pasos, comparar peticiones, identificar de dónde sale cada valor y probar una modificación controlada en el momento adecuado. Una vez entendido el flujo, podría automatizarlo o configurar sqlmap con una petición capturada, recuperación del token y lógica personalizada. El obstáculo no es que sqlmap sea incapaz de usar tokens: es que una petición aislada no reproduce automáticamente toda la lógica específica de esta aplicación.
 
-## 2. Cuando hay un WAF o un formato de petición que a sqlmap no le sale
+## 2. Filtro y señal de respuesta propios de la aplicación
 
-Los payloads por defecto de sqlmap son conocidos, así que un WAF o un filtro medianamente decente los bloquea de entrada. También pasa cuando el parámetro vulnerable está en un lugar raro o con un encoding particular: dentro de un JSON anidado, en base64, con doble URL-encode, en un header. sqlmap tiene tamper scripts para algunas de esas cosas, pero son genéricos y no cubren un filtro hecho a medida.
+Imaginemos que un WAF bloquea una sintaxis concreta y, además, la página cambia en cada visita por publicidad o un contador. Una ejecución estándar puede recibir bloqueos o comparar páginas variables sin distinguir la condición verdadera de la falsa. En Burp puedo probar manualmente qué carácter o estructura provoca el bloqueo y hallar una señal estable: un texto, código HTTP, cambio de longitud o demora que sí depende de la condición inyectada.
 
-Manualmente puedo observar exactamente qué me bloquea y qué me deja pasar, y armar un bypass a medida: cambiar comentarios, jugar con mayúsculas y minúsculas, reemplazar espacios, partir las palabras clave, codificar justo el carácter que el filtro no revisa. Veo la respuesta de cada intento y voy ajustando, cosa que sqlmap a ciegas no hace.
+Después puedo trasladar esos hallazgos a sqlmap mediante un ajuste del punto de inyección, un *tamper script* apropiado y opciones como `--string`, `--not-string`, `--regexp` o `--code`. Si la transformación que exige el filtro es específica o la respuesta requiere interpretar varios pasos, quizá convenga continuar con pruebas manuales o escribir una integración propia. Un WAF o un cuerpo JSON por sí solos **no** prueban que sqlmap vaya a fallar.
 
-Un tercer caso clásico es la inyección de segundo orden: el payload se guarda en una petición y recién se ejecuta en otra parte de la app más tarde. sqlmap prueba entrada y salida en el mismo lugar, así que no ve que el payload disparó en otro endpoint; alguien que conoce la aplicación sí sabe dónde ir a mirar.
+También existe la SQLi de segundo orden: el valor se guarda en una petición y se usa después en otra pantalla. sqlmap admite `--second-url` y `--second-req`, pero primero hay que descubrir dónde se manifiesta el efecto y si requiere acciones intermedias. Esa comprensión de la aplicación es el aporte del pentester.
 
-La conclusión es que sqlmap es excelente para lo repetitivo y para confirmar rápido, pero no reemplaza entender la aplicación. Cuando la explotación depende del contexto, del flujo o de un filtro específico, el que gana es el que manipula la petición a mano sabiendo qué está haciendo.
+**Conclusión:** la explotación manual sirve para descubrir el contexto, las dependencias y la señal de éxito. sqlmap puede automatizar gran parte del trabajo una vez que se configura con esa información.
+
+## Fuentes
+
+- [sqlmap, documentación de uso](https://github.com/sqlmapproject/sqlmap/wiki/Usage): peticiones capturadas, tokens, `--eval`, formatos codificados, *tamper scripts*, comparación de respuestas y segundo orden.
