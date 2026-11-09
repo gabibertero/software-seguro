@@ -1,7 +1,7 @@
 # Estandarización de Vulnerabilidades (CVE y CWE)
 
-CVE es un identificador público para una vulnerabilidad conocida. CWE, en cambio, es una lista que clasifica tipos de debilidades de software o hardware. Dicho de otra forma, CWE describe una clase de debilidad que puede aparecer en distintos productos, mientras que CVE identifica una vulnerabilidad concreta.
+CVE y CWE no nombran lo mismo. Un **CVE** identifica una vulnerabilidad concreta que se hizo pública; un **CWE** clasifica el tipo de debilidad que la hizo posible. Por ejemplo, distintos productos pueden tener vulnerabilidades diferentes causadas por la misma clase de error. Esas fallas tendrían CVE distintos, pero podrían compartir un CWE.
 
-Los CVE son asignados por organizaciones autorizadas llamadas CVE Numbering Authorities (CNAs). Cada CNA trabaja dentro de un alcance definido; por ejemplo, puede asignar identificadores para productos de una empresa o proyecto determinados. Los registros se pueden consultar públicamente en CVE.org y en la NVD, que agrega información complementaria.
+Los CVE los asignan organizaciones autorizadas llamadas **CVE Numbering Authorities (CNAs)**. Cada una tiene un alcance definido, como los productos de una empresa o de un proyecto. Después puedo consultar esos registros en CVE.org o en la NVD, que agrega información complementaria.
 
-Entre las herramientas automatizadas que pueden ayudar a encontrar problemas de seguridad están OWASP ZAP, que analiza aplicaciones web, y Nmap, cuyos scripts NSE incluyen comprobaciones para ciertas vulnerabilidades conocidas. No detectan todos los problemas ni reemplazan una revisión manual.
+Dos herramientas que pueden ayudar a detectar vulnerabilidades conocidas son **OWASP ZAP**, para analizar aplicaciones web, y **Nmap**, que tiene scripts NSE para comprobar ciertas fallas. Ninguna detecta todo ni reemplaza la revisión manual.
